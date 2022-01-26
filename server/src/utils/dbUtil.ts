@@ -1,4 +1,4 @@
-import { Client, Pool, QueryResult } from 'pg';
+import { PoolClient, Pool, QueryResult } from 'pg';
 import config = require('./../config');
 import logger = require('./../utils/logger');
 
@@ -26,14 +26,14 @@ pool.on('error', function (err:Error) {
  * @param data: the data to be stored
  * @return result
  */
-export const sqlToDB = async (sql:string, data:string[]) => {
+export const sqlToDB = async <T>(sql:string, data:string[]) => {
     logger.debug(`sqlToDB() sql: ${sql} | data: ${data}`);
-    let result : QueryResult;
+    let result : QueryResult<T>;
     try {
         result = await pool.query(sql, data);
         return result;
     } catch (error) {
-        throw new Error(error.message);
+        throw new Error((error as Error).message);
     }
 }
 
@@ -43,12 +43,12 @@ export const sqlToDB = async (sql:string, data:string[]) => {
  */
 export const getTransaction = async () => {
     logger.debug(`getTransaction()`);
-    const client : Client = await pool.connect();
+    const client = await pool.connect();
     try {
         await client.query('BEGIN');
         return client;
     } catch (error) {
-        throw new Error(error.message);
+        throw new Error((error as Error).message);
     }
 }
 
@@ -58,7 +58,7 @@ export const getTransaction = async () => {
  * @param data: the data to be stored
  * @return result
  */
-export const sqlExecSingleRow = async (client:Client, sql:string, data:string[][]) => {
+export const sqlExecSingleRow = async (client:PoolClient, sql:string, data:string[][]) => {
     logger.debug(`sqlExecSingleRow() sql: ${sql} | data: ${data}`);
     let result : QueryResult;
     try {
@@ -66,8 +66,8 @@ export const sqlExecSingleRow = async (client:Client, sql:string, data:string[][
         logger.debug(`sqlExecSingleRow(): ${result.command} | ${result.rowCount}`);
         return result
     } catch (error) {
-        logger.error(`sqlExecSingleRow() error: ${error.message} | sql: ${sql} | data: ${data}`);
-        throw new Error(error.message);
+        logger.error(`sqlExecSingleRow() error: ${(error as Error).message} | sql: ${sql} | data: ${data}`);
+        throw new Error((error as Error).message);
     }
 }
 
@@ -77,7 +77,7 @@ export const sqlExecSingleRow = async (client:Client, sql:string, data:string[][
  * @param data: the data to be stored
  * @return result
  */
-export const sqlExecMultipleRows = async (client:Client, sql:string, data:string[][]) => {
+export const sqlExecMultipleRows = async (client:PoolClient, sql:string, data:string[][]) => {
     logger.debug(`inside sqlExecMultipleRows()`);
     logger.debug(`sqlExecMultipleRows() data: ${data}`);
     if (data.length !== 0) {
@@ -88,7 +88,7 @@ export const sqlExecMultipleRows = async (client:Client, sql:string, data:string
                 await client.query(sql, item);
             } catch (error) {
                 logger.error(`sqlExecMultipleRows() error: ${error}`);
-                throw new Error(error.message);
+                throw new Error((error as Error).message);
             }
         }
     } else {
@@ -100,13 +100,13 @@ export const sqlExecMultipleRows = async (client:Client, sql:string, data:string
 /*
  * Rollback transaction
  */
-export const rollback = async (client:Client) => {
+export const rollback = async (client: PoolClient) => {
     if (typeof client !== 'undefined' && client) {
         try {
             logger.info(`sql transaction rollback`);
             await client.query('ROLLBACK');
         } catch (error) {
-            throw new Error(error.message);
+            throw new Error((error as Error).message);
         } finally {
             client.release();
         }
@@ -118,12 +118,12 @@ export const rollback = async (client:Client) => {
 /*
  * Commit transaction
  */
-export const commit = async (client:Client) => {
+export const commit = async (client: PoolClient) => {
     logger.debug(`sql transaction committed`);
     try {
         await client.query('COMMIT');
     } catch (error) {
-        throw new Error(error.message);
+        throw new Error((error as Error).message);
     } finally {
         client.release();
     }

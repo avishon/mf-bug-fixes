@@ -1,4 +1,4 @@
-import {Client, QueryResult} from 'pg';
+import {QueryResult} from 'pg';
 import * as dbUtil from './../utils/dbUtil';
 import logger = require('./../utils/logger');
 const transactionSuccess : string = 'transaction success';
@@ -15,7 +15,7 @@ export const getTimeModel = async () => {
         result = await dbUtil.sqlToDB(sql, data);
         return result;
     } catch (error) {
-        throw new Error(error.message);
+        throw new Error((error as Error).message);
     }
 }
 
@@ -28,7 +28,7 @@ export const sampleTransactionModel = async () => {
     let multiSql = "INSERT INTO TEST (testcolumn) VALUES ($1)";
     let singleData : string[][] = [];
     let multiData : string[][] = [['typescript'], ['is'], ['fun']];
-    let client: Client = await dbUtil.getTransaction();
+    let client = await dbUtil.getTransaction();
     try {
         await dbUtil.sqlExecSingleRow(client, singleSql, singleData);
         await dbUtil.sqlExecMultipleRows(client, multiSql, multiData);
@@ -36,7 +36,7 @@ export const sampleTransactionModel = async () => {
         return transactionSuccess;
     } catch (error) {
         await dbUtil.rollback(client);
-        logger.error(`sampleTransactionModel error: ${error.message}`);
-        throw new Error(error.message);
+        logger.error(`sampleTransactionModel error: ${(error as Error).message}`);
+        throw new Error((error as Error).message);
     }
 }

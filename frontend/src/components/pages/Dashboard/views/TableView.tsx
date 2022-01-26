@@ -14,6 +14,7 @@ import { Report } from "../Dashboard";
 interface Props {
     report: Report;
     isRefreshing: boolean;
+    refreshData: ()=> {}
 }
 
 const Header = styled(Center)`
@@ -45,7 +46,7 @@ const TableView = (props: Props) => {
                 <PrimaryText>Year {props.report.year} - caregivers report</PrimaryText>
             </Header>
             <Row justifyContent="flex-end">
-                <Button>
+                <Button onClick={props.refreshData}>
                     <RefreshIcon />
                     <span>Refresh</span>
                 </Button>
@@ -63,7 +64,7 @@ const TableView = (props: Props) => {
                             <Td>{caregiver.name}</Td>
                             <Td>
                                 {caregiver.patients.length > 0 ? (
-                                    caregiver.patients
+                                    caregiver.patients.join(', ')
                                 ) : (
                                     <None />
                                 )}

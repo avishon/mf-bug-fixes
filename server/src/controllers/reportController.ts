@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { QueryResult } from 'pg';
 import * as dbUtil from './../utils/dbUtil';
 
 interface Report {
@@ -10,23 +9,28 @@ interface Report {
     }[]
 }
 
+interface DatabaseResultRow {
+    caregiver_name: string;
+    patients_list: string[];
+}
+
 export const getReport = async (req: Request, res: Response) => {
 
-    const sql = `
-        SELECT
-            caregiver.id      AS caregiver_id,
-            caregiver.name    AS caregiver_name,
-            patient.id        AS patient_id,
-            patient.name      AS patient_name,
-            visit.date        AS visit_date
-        FROM caregiver
-        JOIN visit ON visit.caregiver = caregiver.id
-        JOIN patient ON patient.id = visit.patient
+    const sql = ` 
+        SELECT 
+            c.id,
+            c.name AS caregiver_name,
+            array_agg(p.name) as patients_list
+        FROM caregiver c
+        JOIN visit v ON v.caregiver = c.id
+        JOIN patient p ON p.id = v.patient
+        WHERE extract(year from v.date) = $1
+        GROUP BY c.id
     `;
+     
     
-    let result : QueryResult;
     try {
-        result = await dbUtil.sqlToDB(sql, []);
+        let result = await dbUtil.sqlToDB<DatabaseResultRow>(sql, [req.params.year]);
         const report: Report = {
             year: parseInt(req.params.year),
             caregivers: []
@@ -35,12 +39,12 @@ export const getReport = async (req: Request, res: Response) => {
         for ( let row of result.rows) {
             report.caregivers.push({
                 name: row.caregiver_name,
-                patients: [row.patient_name]
+                patients: row.patients_list
             })
         }
         res.status(200).json(report);
     } catch (error) {
-        throw new Error(error.message);
+        throw new Error((error as Error).message);
     }
 
 }
