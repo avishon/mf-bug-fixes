@@ -1,5 +1,5 @@
 {
-  "name": "medflyt-statistics",
+  "name": "statistics",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
